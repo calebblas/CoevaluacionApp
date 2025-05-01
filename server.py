@@ -1,22 +1,31 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from flask import Flask, request, jsonify, render_template
+import json
+
 # Inicializar Flask
 app = Flask(__name__)
 CORS(app)
 
-# Configura las credenciales para acceder a Google Sheets
-scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+# Configura el alcance para acceder a Google Sheets
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    'https://www.googleapis.com/auth/spreadsheets',
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# Ruta del archivo de credenciales JSON
-credenciales = 'credenciales.json'
+# Cargar credenciales desde la variable de entorno
+credentials_json = os.getenv('GOOGLE_CREDENTIALS')
 
-# Autenticación con la API de Google Sheets
-credentials = ServiceAccountCredentials.from_json_keyfile_name(credenciales, scope)
+if credentials_json is None:
+    raise ValueError("La variable de entorno 'GOOGLE_CREDENTIALS' no está definida.")
+
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+    json.loads(credentials_json), scope
+)
 client = gspread.authorize(credentials)
 
 # Abre la hoja de cálculo usando el ID de la hoja
@@ -31,18 +40,17 @@ def index():
 # Ruta para obtener los nombres de los estudiantes
 @app.route('/nombres', methods=['GET'])
 def obtener_nombres():
-    # Obtén los nombres de la segunda columna de la hoja
     nombres = sheet.col_values(2)[1:]  # Excluye el encabezado
     return jsonify(nombres)
 
 # Ruta para obtener las evaluaciones
 @app.route('/evaluaciones', methods=['GET'])
 def obtener_evaluaciones():
-    # Obtén los datos de las evaluaciones (autoevaluaciones y coevaluaciones)
-    data = sheet.get_all_records()  # Devuelve todos los registros como lista de diccionarios
+    data = sheet.get_all_records()
     return jsonify(data)
 
-@app.route("/")
+# Ruta para mostrar una página HTML (si usas index.html)
+@app.route("/pagina")
 def home():
     return render_template("index.html")
 
