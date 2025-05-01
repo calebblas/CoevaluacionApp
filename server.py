@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-
+from flask import Flask, request, jsonify, render_template
 # Inicializar Flask
 app = Flask(__name__)
 CORS(app)
@@ -41,6 +41,10 @@ def obtener_evaluaciones():
     # Obtén los datos de las evaluaciones (autoevaluaciones y coevaluaciones)
     data = sheet.get_all_records()  # Devuelve todos los registros como lista de diccionarios
     return jsonify(data)
+
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
